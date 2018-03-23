@@ -7,6 +7,8 @@ import sys
 import tempfile
 import termcolor
 
+import crypto
+
 _log = logging.getLogger(__name__)
 
 ONE_INDENT = "  "
@@ -81,7 +83,21 @@ class Storage():
     def __init__(self, storage_file):
         self.storage = None
         with open(storage_file) as fin:
-            self.storage = json.load(fin)
+            encrypted = fin.read()
+        cryptor = crypto.Cryptor()
+        with tempfile.NamedTemporaryFile() as pass_tmp_file:
+            pass_tmp_file.write(
+                getpass.getpass(
+                    prompt="Master password:"
+                ).encode("utf-8")
+            )
+            pass_tmp_file.flush()
+            self.storage = json.loads(
+                crypto.decrypt(
+                    pass_tmp_file.name,
+                    encrypted.encode("utf-8"),
+                )
+            )
 
     def search(self, prefix):
         return prefix_search_recursive(
